@@ -17,7 +17,7 @@ export enum RequestStatus {
 }
 
 export interface Task {
-  id: number;
+  id: string;
   name: string;
   description: string;
   time: string;
@@ -28,6 +28,7 @@ export interface Task {
   dueDate: string;
   creationDate: string;
   requestStatus: RequestStatus;
+  order: number;
 }
 
 export interface AppState {

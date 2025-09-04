@@ -8,13 +8,12 @@ interface QuadrantProps {
   title: string;
   tasks: Task[];
   onEditTask: (task: Task) => void;
-  onDeleteTask: (taskId: number) => void;
-  onToggleComplete: (taskId: number) => void;
-  onMoveTask: (taskId: number, newQuadrant: QuadrantType) => void;
-  onReorderTask: (draggedTaskId: number, droppedOnTaskId: number) => void;
+  onToggleComplete: (taskId: string) => void;
+  onMoveTask: (taskId: string, newQuadrant: QuadrantType) => void;
+  onReorderTask: (draggedTaskId: string, droppedOnTaskId: string) => void;
 }
 
-const Quadrant: React.FC<QuadrantProps> = ({ quadrant, title, tasks, ...taskHandlers }) => {
+const Quadrant: React.FC<QuadrantProps> = ({ quadrant, title, tasks, onEditTask, onToggleComplete, onMoveTask, onReorderTask }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const details = QUADRANT_DETAILS[quadrant];
 
@@ -33,7 +32,7 @@ const Quadrant: React.FC<QuadrantProps> = ({ quadrant, title, tasks, ...taskHand
     setIsDragOver(false);
     const taskId = e.dataTransfer.getData('text/plain');
     if (taskId) {
-      taskHandlers.onMoveTask(Number(taskId), quadrant);
+      onMoveTask(taskId, quadrant);
     }
   };
 
@@ -51,7 +50,13 @@ const Quadrant: React.FC<QuadrantProps> = ({ quadrant, title, tasks, ...taskHand
       </h2>
       <div className="task-list flex-grow space-y-1 overflow-y-auto pr-1">
         {tasks.map(task => (
-          <TaskCard key={task.id} task={task} {...taskHandlers} />
+          <TaskCard 
+            key={task.id} 
+            task={task} 
+            onEditTask={onEditTask} 
+            onToggleComplete={onToggleComplete} 
+            onReorderTask={onReorderTask} 
+           />
         ))}
       </div>
     </div>

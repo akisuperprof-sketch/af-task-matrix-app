@@ -5,7 +5,7 @@ import { Task, Category, RequestStatus } from '../types';
 interface TaskModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (taskData: Omit<Task, 'id' | 'completed' | 'quadrant'>) => void;
+  onSave: (taskData: Omit<Task, 'id' | 'completed' | 'quadrant' | 'order'>) => void;
   task: Task | null;
 }
 
