@@ -193,10 +193,10 @@ const App: React.FC = () => {
                 </div>
                  <div className="grid grid-cols-12 grid-rows-2 gap-2 h-full overflow-hidden">
                     <div className="col-span-1 row-span-1 flex items-center justify-center">
-                        <span className="[writing-mode:vertical-lr] font-semibold text-red-400">重要度 高</span>
+                        <span className="[writing-mode:vertical-lr] rotate-180 font-semibold text-red-400">重要度 高</span>
                     </div>
                     <div className="col-span-1 row-span-1 flex items-center justify-center">
-                         <span className="[writing-mode:vertical-lr] font-semibold text-blue-400">重要度 低</span>
+                         <span className="[writing-mode:vertical-lr] rotate-180 font-semibold text-blue-400">重要度 低</span>
                     </div>
 
                     {Object.values(QuadrantType).map((quadrant, index) => {
