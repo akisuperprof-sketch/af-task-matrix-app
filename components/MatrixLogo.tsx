@@ -57,7 +57,7 @@ const MatrixLogo: React.FC<MatrixLogoProps> = ({ version }) => {
   return (
     <div className="font-mono uppercase text-green-400 flex flex-col items-center justify-center tracking-widest p-2 relative">
       <span className="text-lg sm:text-xl md:text-2xl" style={{ ...glowStyle, color: '#ccc' }}>
-        AIR FUTURE TASK
+        FUTURE TASK
       </span>
       <span className="text-4xl sm:text-5xl md:text-6xl font-bold" style={glowStyle}>
         {matrixText}

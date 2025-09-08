@@ -2,51 +2,91 @@ import React, { useState, useCallback, FormEvent, useMemo, useEffect } from 'rea
 import { QuadrantType, Task, Category, RequestStatus } from './types';
 import { QUADRANT_DETAILS } from './constants';
 import Quadrant from './components/Quadrant';
+import HelpModal from './components/HelpModal';
 import { EditIcon } from './components/icons/EditIcon';
 import { TrashIcon } from './components/icons/TrashIcon';
 import { PlusIcon } from './components/icons/PlusIcon';
 import { ListIcon } from './components/icons/ListIcon';
+import { AppleIcon } from './components/icons/AppleIcon';
 import MatrixLogo from './components/MatrixLogo';
+import useLocalStorage from './hooks/useLocalStorage';
 
-const initialTabs = {
-    tab1: 'A',
-    tab2: 'B',
-    tab3: 'C',
-    tab4: 'D',
-};
-
-const initialTasksData: { [key: string]: Task[] } = {
+const initialTasks = {
     'tab1': [
-        { id: 't1-1', name: 'プロジェクト計画書の作成', description: '主要なマイルストーンを定義する', time: '8h', cost: 0, category: Category.WORK, quadrant: QuadrantType.A, completed: false, dueDate: '2024-08-15', creationDate: '2024-08-01', requestStatus: RequestStatus.NONE, order: 0 },
-        { id: 't1-2', name: '新しいスキルの学習', description: 'ReactとTypeScriptのコースを完了する', time: '20h', cost: 50, category: Category.PRIVATE, quadrant: QuadrantType.B, completed: false, dueDate: '2024-09-30', creationDate: '2024-08-01', requestStatus: RequestStatus.NONE, order: 1 },
-        { id: 't1-3', name: 'クライアントからの緊急メール対応', description: 'XX社からの問い合わせに本日中に返信', time: '1h', cost: 0, category: Category.WORK, quadrant: QuadrantType.C, completed: true, dueDate: '2024-08-10', creationDate: '2024-08-10', requestStatus: RequestStatus.RECEIVED, order: 2 },
-        { id: 't1-4', name: 'SNSのチェック', description: '友人の投稿を確認する', time: '30m', cost: 0, category: Category.PRIVATE, quadrant: QuadrantType.D, completed: false, dueDate: '', creationDate: '2024-08-10', requestStatus: RequestStatus.NONE, order: 3 },
+        {
+            id: 'task-1',
+            name: '本日中の重要顧客A社への提案書提出',
+            description: '最終見積もりを反映させ、本日17時までに送付する。',
+            time: '120',
+            cost: 0,
+            category: Category.WORK,
+            quadrant: QuadrantType.A, // Important & Urgent
+            completed: false,
+            dueDate: new Date().toISOString().split('T')[0],
+            creationDate: new Date().toISOString().split('T')[0],
+            requestStatus: RequestStatus.NONE,
+            order: 0,
+        },
+        {
+            id: 'task-2',
+            name: '来四半期の営業戦略立案',
+            description: '市場分析データをもとに、ターゲット顧客とアプローチ方法を具体化する。',
+            time: '480',
+            cost: 0,
+            category: Category.WORK,
+            quadrant: QuadrantType.B, // Important & Not Urgent
+            completed: false,
+            dueDate: '',
+            creationDate: new Date().toISOString().split('T')[0],
+            requestStatus: RequestStatus.NONE,
+            order: 0,
+        },
+        {
+            id: 'task-3',
+            name: '急ぎの経費精算申請（今週分）',
+            description: '交通費と交際費のレシートを添付して申請する。',
+            time: '30',
+            cost: 15000,
+            category: Category.WORK,
+            quadrant: QuadrantType.C, // Not Important & Urgent
+            completed: false,
+            dueDate: '',
+            creationDate: new Date().toISOString().split('T')[0],
+            requestStatus: RequestStatus.NONE,
+            order: 0,
+        },
+        {
+            id: 'task-4',
+            name: '業界ニュースの定期チェック',
+            description: '競合の動向や新技術に関する情報を収集する。',
+            time: '15',
+            cost: 0,
+            category: Category.WORK,
+            quadrant: QuadrantType.D, // Not Important & Not Urgent
+            completed: false,
+            dueDate: '',
+            creationDate: new Date().toISOString().split('T')[0],
+            requestStatus: RequestStatus.NONE,
+            order: 0,
+        },
     ],
-    'tab2': [
-        { id: 't2-1', name: '週次レポートの提出', description: '', time: '2h', cost: 0, category: Category.WORK, quadrant: QuadrantType.A, completed: false, dueDate: '2024-08-12', creationDate: '2024-08-10', requestStatus: RequestStatus.NONE, order: 0 },
-    ],
-    'tab3': [],
-    'tab4': [],
-};
-
-
-const quadrantOrder: Record<QuadrantType, number> = {
-    [QuadrantType.A]: 1,
-    [QuadrantType.B]: 2,
-    [QuadrantType.C]: 3,
-    [QuadrantType.D]: 4,
+    'tab2': []
 };
 
 
 const App: React.FC = () => {
-    const [tabs, setTabs] = useState(initialTabs);
-    const [allTasks, setAllTasks] = useState<{ [key: string]: Task[] }>(initialTasksData);
+    const [tabs, setTabs] = useLocalStorage<{ [key: string]: string }>('task-matrix-tabs', {
+        'tab1': 'マイプロジェクト',
+        'tab2': 'プライベート'
+    });
+    const [allTasks, setAllTasks] = useLocalStorage<{ [key: string]: Task[] }>('task-matrix-tasks', initialTasks);
     const [activeTab, setActiveTab] = useState<string>('tab1');
     const [editingTask, setEditingTask] = useState<Task | null>(null);
     const [isFormPanelOpen, setFormPanelOpen] = useState(false);
     const [isListPanelOpen, setListPanelOpen] = useState(false);
     const [editingTab, setEditingTab] = useState<string | null>(null);
     const [tabName, setTabName] = useState('');
+    const [isHelpModalOpen, setHelpModalOpen] = useState(false);
 
     const tasks = useMemo(() => allTasks[activeTab] || [], [allTasks, activeTab]);
 
@@ -61,13 +101,15 @@ const App: React.FC = () => {
     }, []);
 
     const handleMoveTask = useCallback((taskId: string, newQuadrant: QuadrantType) => {
-        setAllTasks(prev => ({
-            ...prev,
-            [activeTab]: (prev[activeTab] || []).map(t =>
-                t.id === taskId ? { ...t, quadrant: newQuadrant } : t
-            ),
-        }));
-    }, [activeTab]);
+        setAllTasks(prev => {
+            const newTasks = [...(prev[activeTab] || [])];
+            const taskIndex = newTasks.findIndex(t => t.id === taskId);
+            if (taskIndex !== -1) {
+                newTasks[taskIndex].quadrant = newQuadrant;
+            }
+            return { ...prev, [activeTab]: newTasks };
+        });
+    }, [activeTab, setAllTasks]);
 
     const handleReorderTask = useCallback((draggedTaskId: string, droppedOnTaskId: string) => {
         setAllTasks(prev => {
@@ -83,27 +125,29 @@ const App: React.FC = () => {
             } else {
                 return prev;
             }
-
+            
             const finalTasks = reorderedTasks.map((task, index) => ({ ...task, order: index }));
             return { ...prev, [activeTab]: finalTasks };
         });
-    }, [activeTab]);
+    }, [activeTab, setAllTasks]);
 
     const handleToggleComplete = useCallback((taskId: string) => {
-        setAllTasks(prev => ({
-            ...prev,
-            [activeTab]: (prev[activeTab] || []).map(t =>
+        setAllTasks(prev => {
+            const newTasks = (prev[activeTab] || []).map(t =>
                 t.id === taskId ? { ...t, completed: !t.completed } : t
-            ),
-        }));
-    }, [activeTab]);
+            );
+            return { ...prev, [activeTab]: newTasks };
+        });
+    }, [activeTab, setAllTasks]);
 
     const handleDeleteTask = useCallback((taskId: string) => {
-        setAllTasks(prev => ({
-            ...prev,
-            [activeTab]: (prev[activeTab] || []).filter(t => t.id !== taskId)
-        }));
-    }, [activeTab]);
+        if (window.confirm('このタスクを削除してもよろしいですか？')) {
+            setAllTasks(prev => {
+                const newTasks = (prev[activeTab] || []).filter(t => t.id !== taskId);
+                return { ...prev, [activeTab]: newTasks };
+            });
+        }
+    }, [activeTab, setAllTasks]);
 
     const handleOpenForm = (task: Task | null = null) => {
         setEditingTask(task);
@@ -112,20 +156,25 @@ const App: React.FC = () => {
     };
 
     const handleSaveTask = (formData: Omit<Task, 'id' | 'order'>) => {
-        setAllTasks(prev => {
-            const currentTasks = prev[activeTab] || [];
-            if (editingTask) {
-                const updatedTasks = currentTasks.map(t => t.id === editingTask.id ? { ...editingTask, ...formData, order: t.order } : t);
-                return { ...prev, [activeTab]: updatedTasks };
-            } else {
-                const newTask: Task = {
-                    ...formData,
-                    id: `task-${Date.now()}`,
-                    order: currentTasks.length,
-                };
-                return { ...prev, [activeTab]: [...currentTasks, newTask] };
-            }
-        });
+        const currentTasks = allTasks[activeTab] || [];
+        if (editingTask) {
+            setAllTasks(prev => ({
+                ...prev,
+                [activeTab]: (prev[activeTab] || []).map(t =>
+                    t.id === editingTask.id ? { ...t, ...formData, id: t.id, order: t.order } : t
+                ),
+            }));
+        } else {
+            const newTask: Task = {
+                ...formData,
+                id: `task-${Date.now()}`,
+                order: currentTasks.length,
+            };
+            setAllTasks(prev => ({
+                ...prev,
+                [activeTab]: [...(prev[activeTab] || []), newTask],
+            }));
+        }
         setFormPanelOpen(false);
         setEditingTask(null);
     };
@@ -145,17 +194,16 @@ const App: React.FC = () => {
     const activeTasks = useMemo(() => tasks.filter(task => !task.completed), [tasks]);
 
     const sortedListedTasks = useMemo(() => {
+        const quadrantOrder: Record<QuadrantType, number> = {
+            [QuadrantType.A]: 1, [QuadrantType.B]: 2, [QuadrantType.C]: 3, [QuadrantType.D]: 4,
+        };
         return tasks
             .slice()
             .sort((a, b) => {
-                if (a.completed !== b.completed) {
-                    return a.completed ? 1 : -1;
-                }
+                if (a.completed !== b.completed) return a.completed ? 1 : -1;
                 const orderA = quadrantOrder[a.quadrant] ?? 5;
                 const orderB = quadrantOrder[b.quadrant] ?? 5;
-                if (orderA !== orderB) {
-                    return orderA - orderB;
-                }
+                if (orderA !== orderB) return orderA - orderB;
                 return a.order - b.order;
             });
     }, [tasks]);
@@ -163,7 +211,14 @@ const App: React.FC = () => {
 
     return (
         <div className="flex flex-col h-screen max-h-screen p-2 sm:p-4 bg-black font-sans overflow-hidden">
-            <header className="flex-shrink-0">
+            <header className="flex-shrink-0 relative">
+                <button 
+                    onClick={() => setHelpModalOpen(true)}
+                    className="absolute top-2 left-2 text-red-500 hover:text-red-400 transition-colors z-10 p-2"
+                    aria-label="使い方"
+                >
+                    <AppleIcon />
+                </button>
                 <MatrixLogo version={version} />
             </header>
 
@@ -204,10 +259,10 @@ const App: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-12 grid-rows-2 gap-2 h-full overflow-hidden">
                     <div className="col-span-1 row-span-1 flex items-center justify-center">
-                        <span className="[writing-mode:vertical-lr] rotate-180 font-semibold text-red-400">重要度 高</span>
+                        <span className="[writing-mode:vertical-lr] font-semibold text-red-400">重要度 高</span>
                     </div>
                     <div className="col-span-1 row-span-1 flex items-center justify-center">
-                        <span className="[writing-mode:vertical-lr] rotate-180 font-semibold text-blue-400">重要度 低</span>
+                        <span className="[writing-mode:vertical-lr] font-semibold text-blue-400">重要度 低</span>
                     </div>
 
                     {Object.values(QuadrantType).map((quadrant, index) => {
@@ -246,14 +301,11 @@ const App: React.FC = () => {
                 </button>
             </div>
 
-            {/* Side Panels */}
             <div className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-gray-900/95 backdrop-blur-sm shadow-2xl z-10 p-4 transform transition-transform duration-300 ease-in-out ${isFormPanelOpen || isListPanelOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <button onClick={() => { setFormPanelOpen(false); setListPanelOpen(false); }} className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
 
-                {/* Form Panel */}
                 {isFormPanelOpen && <TaskForm task={editingTask} onSave={handleSaveTask} />}
 
-                {/* List Panel */}
                 {isListPanelOpen && (
                     <div className="flex flex-col h-full text-gray-200">
                         <h2 className="text-xl font-bold text-green-400 mb-4">タスク一覧</h2>
@@ -270,15 +322,15 @@ const App: React.FC = () => {
                     </div>
                 )}
             </div>
+            
+            <HelpModal isOpen={isHelpModalOpen} onClose={() => setHelpModalOpen(false)} />
         </div>
     );
 };
 
-
-// Form Component
 const TaskForm: React.FC<{ task: Task | null; onSave: (data: Omit<Task, 'id' | 'order'>) => void; }> = ({ task, onSave }) => {
     const [formData, setFormData] = useState({
-        name: '', description: '', time: '', cost: 0, category: Category.WORK, dueDate: '', creationDate: new Date().toISOString().split('T')[0], requestStatus: RequestStatus.NONE,
+        name: '', description: '', time: '', cost: 0, category: Category.WORK, dueDate: '', creationDate: new Date().toISOString().split('T')[0], requestStatus: RequestStatus.NONE, completed: false,
     });
     const [importance, setImportance] = useState<'high' | 'low'>('low');
     const [urgency, setUrgency] = useState<'high' | 'low'>('low');
@@ -294,6 +346,7 @@ const TaskForm: React.FC<{ task: Task | null; onSave: (data: Omit<Task, 'id' | '
                 dueDate: task.dueDate,
                 creationDate: task.creationDate,
                 requestStatus: task.requestStatus || RequestStatus.NONE,
+                completed: task.completed,
             });
             switch (task.quadrant) {
                 case QuadrantType.A: setImportance('high'); setUrgency('high'); break;
@@ -302,7 +355,7 @@ const TaskForm: React.FC<{ task: Task | null; onSave: (data: Omit<Task, 'id' | '
                 case QuadrantType.D: setImportance('low'); setUrgency('low'); break;
             }
         } else {
-            setFormData({ name: '', description: '', time: '', cost: 0, category: Category.WORK, dueDate: '', creationDate: new Date().toISOString().split('T')[0], requestStatus: RequestStatus.NONE });
+            setFormData({ name: '', description: '', time: '', cost: 0, category: Category.WORK, dueDate: '', creationDate: new Date().toISOString().split('T')[0], requestStatus: RequestStatus.NONE, completed: false });
             setImportance('low');
             setUrgency('low');
         }
@@ -318,7 +371,7 @@ const TaskForm: React.FC<{ task: Task | null; onSave: (data: Omit<Task, 'id' | '
         else if (importance === 'low' && urgency === 'high') quadrant = QuadrantType.C;
         else quadrant = QuadrantType.D;
 
-        onSave({ ...formData, quadrant, completed: task?.completed || false });
+        onSave({ ...formData, quadrant });
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -359,58 +412,59 @@ const TaskForm: React.FC<{ task: Task | null; onSave: (data: Omit<Task, 'id' | '
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                     <div>
-                        <label className="block text-gray-400 mb-1">タスク処理必要時間</label>
-                        <input name="time" value={formData.time} onChange={handleChange} placeholder="例: 2h, 30m" className="w-full bg-gray-800 border border-gray-700 rounded p-2 focus:ring-1 focus:ring-green-500 focus:outline-none" />
+                        <label className="block text-gray-400 mb-1">所要時間(分)</label>
+                        <input type="text" name="time" value={formData.time} onChange={handleChange} className="w-full bg-gray-800 border border-gray-700 rounded p-2 focus:ring-1 focus:ring-green-500 focus:outline-none" />
                     </div>
                     <div>
-                        <label className="block text-gray-400 mb-1">費用</label>
+                        <label className="block text-gray-400 mb-1">コスト(円)</label>
                         <input type="number" name="cost" value={formData.cost} onChange={handleChange} className="w-full bg-gray-800 border border-gray-700 rounded p-2 focus:ring-1 focus:ring-green-500 focus:outline-none" />
                     </div>
                 </div>
                 <div>
-                    <label className="block text-gray-400 mb-1">依頼ステータス</label>
-                    <select name="requestStatus" value={formData.requestStatus} onChange={handleChange} className="w-full bg-gray-800 border border-gray-700 rounded p-2 focus:ring-1 focus:ring-green-500 focus:outline-none">
-                        <option value={RequestStatus.NONE}>なし</option>
-                        <option value={RequestStatus.RECEIVED}>依頼を受けてる</option>
-                        <option value={RequestStatus.DELEGATED}>依頼中</option>
+                    <label className="block text-gray-400 mb-1">カテゴリ</label>
+                    <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-800 border border-gray-700 rounded p-2 focus:ring-1 focus:ring-green-500 focus:outline-none">
+                        {Object.values(Category).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="block text-gray-400 mb-1">分類</label>
-                    <select name="category" value={formData.category} onChange={handleChange} className="w-full bg-gray-800 border border-gray-700 rounded p-2 focus:ring-1 focus:ring-green-500 focus:outline-none">
-                        <option value={Category.WORK}>仕事</option>
-                        <option value={Category.PRIVATE}>プライベート</option>
+                    <label className="block text-gray-400 mb-1">依頼状況</label>
+                    <select name="requestStatus" value={formData.requestStatus} onChange={handleChange} className="w-full bg-gray-800 border border-gray-700 rounded p-2 focus:ring-1 focus:ring-green-500 focus:outline-none">
+                        {Object.values(RequestStatus).map(status => <option key={status} value={status}>{status}</option>)}
                     </select>
                 </div>
             </div>
-            <div className="flex-shrink-0 pt-3">
-                <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">保存する</button>
+            <div className="flex-shrink-0 pt-2">
+                <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                    {task ? '更新' : 'タスクを追加'}
+                </button>
             </div>
         </form>
     );
 };
 
-// Task List Item Component
-const TaskListItem: React.FC<{ task: Task; onEdit: (task: Task) => void; onToggleComplete: (id: string) => void; onDelete: (id: string) => void; }> = ({ task, onEdit, onToggleComplete, onDelete }) => {
-    const hasDetails = task.description || (task.requestStatus && task.requestStatus !== RequestStatus.NONE);
-
+const TaskListItem: React.FC<{
+    task: Task;
+    onEdit: (task: Task) => void;
+    onToggleComplete: (taskId: string) => void;
+    onDelete: (taskId:string) => void;
+}> = ({ task, onEdit, onToggleComplete, onDelete }) => {
+    const quadrantDetails = QUADRANT_DETAILS[task.quadrant];
     return (
-        <div className={`grid grid-cols-[auto,1fr,auto] gap-x-2 items-center p-2 rounded transition-colors mb-1 ${task.completed ? 'bg-green-900/30' : 'bg-gray-800/70 hover:bg-gray-700/70'}`}>
-            <input type="checkbox" checked={task.completed} onChange={() => onToggleComplete(task.id)} className="form-checkbox h-4 w-4 rounded bg-gray-700 border-gray-600 text-green-500 focus:ring-green-500" />
-            <div className="truncate">
-                <span className={`${task.completed ? 'line-through text-gray-500' : 'text-gray-200'}`}>{task.name}</span>
-                {hasDetails && (
-                    <p className="text-xs text-gray-400 truncate flex items-center gap-2 mt-1">
-                        {task.requestStatus && task.requestStatus !== RequestStatus.NONE && (
-                            <span className="bg-gray-600 text-gray-300 px-1.5 py-0.5 rounded-full text-xs whitespace-nowrap">{task.requestStatus}</span>
-                        )}
-                        <span>{task.description}</span>
-                    </p>
-                )}
+        <div className={`grid grid-cols-[auto,1fr,auto] gap-x-2 items-center p-2 rounded-md mb-1 transition-colors ${task.completed ? 'bg-gray-800/50 text-gray-500' : 'bg-gray-800 hover:bg-gray-700/50'}`}>
+            <input
+                type="checkbox"
+                checked={task.completed}
+                onChange={() => onToggleComplete(task.id)}
+                className="form-checkbox h-4 w-4 rounded bg-gray-700 border-gray-600 text-green-500 focus:ring-green-500"
+                style={{ accentColor: 'var(--tw-prose-bold)' }}
+            />
+            <div className="flex items-center gap-2 truncate" onDoubleClick={() => onEdit(task)}>
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${quadrantDetails.color.replace('/20', '').replace('border-red-500/50', '')}`} />
+                <span className={`truncate ${task.completed ? 'line-through' : ''}`}>{task.name}</span>
             </div>
             <div className="flex items-center">
-                <button onClick={() => onEdit(task)} className="p-1 text-gray-400 hover:text-blue-400"><EditIcon /></button>
-                <button onClick={() => onDelete(task.id)} className="p-1 text-gray-400 hover:text-red-400"><TrashIcon /></button>
+                <button onClick={() => onEdit(task)} className="p-1 text-gray-400 hover:text-blue-400" aria-label="編集"><EditIcon /></button>
+                <button onClick={() => onDelete(task.id)} className="p-1 text-gray-400 hover:text-red-400" aria-label="削除"><TrashIcon /></button>
             </div>
         </div>
     );
