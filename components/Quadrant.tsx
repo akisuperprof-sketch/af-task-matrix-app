@@ -11,9 +11,10 @@ interface QuadrantProps {
   onToggleComplete: (taskId: string) => void;
   onMoveTask: (taskId: string, newQuadrant: QuadrantType) => void;
   onReorderTask: (draggedTaskId: string, droppedOnTaskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
-const Quadrant: React.FC<QuadrantProps> = ({ quadrant, title, tasks, onEditTask, onToggleComplete, onMoveTask, onReorderTask }) => {
+const Quadrant: React.FC<QuadrantProps> = ({ quadrant, title, tasks, onEditTask, onToggleComplete, onMoveTask, onReorderTask, onDeleteTask }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const details = QUADRANT_DETAILS[quadrant];
 
@@ -55,7 +56,8 @@ const Quadrant: React.FC<QuadrantProps> = ({ quadrant, title, tasks, onEditTask,
             task={task} 
             onEditTask={onEditTask} 
             onToggleComplete={onToggleComplete} 
-            onReorderTask={onReorderTask} 
+            onReorderTask={onReorderTask}
+            onDeleteTask={onDeleteTask}
            />
         ))}
       </div>

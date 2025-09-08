@@ -8,9 +8,10 @@ interface TaskCardProps {
   onEditTask: (task: Task) => void;
   onToggleComplete: (taskId: string) => void;
   onReorderTask: (draggedTaskId: string, droppedOnTaskId: string) => void;
+  onDeleteTask: (taskId: string) => void;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, onEditTask, onToggleComplete, onReorderTask }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, onEditTask, onToggleComplete, onReorderTask, onDeleteTask }) => {
     const [isDragOver, setIsDragOver] = useState(false);
 
     const handleDragStart = (e: DragEvent<HTMLDivElement>) => {
@@ -66,7 +67,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onEditTask, onToggleComplete,
                 <button onClick={() => onEditTask(task)} className="p-1 text-gray-400 hover:text-blue-400 transition-colors rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500" aria-label={`Edit task ${task.name}`}>
                     <EditIcon />
                 </button>
-                <button onClick={() => onToggleComplete(task.id)} className="p-1 text-gray-400 hover:text-red-400 transition-colors rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`Delete task ${task.name}`}>
+                <button onClick={() => onDeleteTask(task.id)} className="p-1 text-gray-400 hover:text-red-400 transition-colors rounded-full focus:outline-none focus:ring-2 focus:ring-red-500" aria-label={`Delete task ${task.name}`}>
                     <TrashIcon />
                 </button>
             </div>
